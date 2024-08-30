@@ -1,0 +1,47 @@
+# Ambiente Virtual
+venv/
+
+# Arquivos e diretórios de cache do Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Arquivos de log
+*.log
+*.log.*
+
+# Dados e builds
+*.csv
+*.dat
+*.db
+*.sqlite
+*.h5
+*.model
+
+# Configurações do editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Testes e distribuições
+.tox/
+.nox/
+.coverage
+*.coverage
+*.egg
+*.egg-info/
+dist/
+build/
+site/
+
+# Sistema Operacional
+.DS_Store
+Thumbs.db
+
+# Chaves e credenciais
+*.env
+.env
+
+# Notebooks
+.ipynb_checkpoints
