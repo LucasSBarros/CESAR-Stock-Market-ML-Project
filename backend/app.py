@@ -6,7 +6,6 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db.init_app(app)
 
-
 from controllers.share_controller import (
     get_shares,
     get_share,
@@ -14,7 +13,6 @@ from controllers.share_controller import (
     update_share,
     delete_share,
 )
-
 
 app.add_url_rule("/api/shares", view_func=get_shares, methods=["GET"])
 app.add_url_rule("/api/shares/<int:id>", view_func=get_share, methods=["GET"])

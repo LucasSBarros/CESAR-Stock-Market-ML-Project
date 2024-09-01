@@ -25,14 +25,12 @@ class ShareService:
         df.index = df.index.tz_convert(None)
         df = df.sort_index()
 
-        # Selecionar as colunas de interesse
         features = df[["Open", "High", "Low", "Close", "Adj Close", "Volume"]].values
 
         # Normalizar os dados
         scaler_features = MinMaxScaler(feature_range=(0, 1))
         scaled_features = scaler_features.fit_transform(features)
 
-        # Criar um scaler separado apenas para a coluna 'Close'
         scaler_close = MinMaxScaler(feature_range=(0, 1))
         scaled_close = scaler_close.fit_transform(df[["Close"]].values)
 
@@ -43,7 +41,7 @@ class ShareService:
         X, y = [], []
         for i in range(sequence_length, len(data) - future_steps + 1):
             X.append(data[i - sequence_length : i])
-            y.append(data[i : i + future_steps, 3])  # Usando a coluna 'Close' como target
+            y.append(data[i : i + future_steps, 3]) 
         return np.array(X), np.array(y)
 
     @staticmethod
@@ -70,8 +68,8 @@ class ShareService:
 
         # Preprocessar os dados
         scaled_features, scaler_close = ShareService.preprocess_data(df)
-        sequence_length = 60  # Definindo a janela de sequências
-        future_steps = days   # Definindo o número de dias de previsão
+        sequence_length = 60 
+        future_steps = days   
 
         # Criar sequências para o treinamento
         X, y = ShareService.create_sequences_multi_step(scaled_features, sequence_length, future_steps)
