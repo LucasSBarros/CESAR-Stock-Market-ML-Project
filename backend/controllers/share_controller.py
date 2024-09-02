@@ -1,85 +1,103 @@
-from flask import request, jsonify
+from flask import Response, request
+from collections import OrderedDict
 from services.share_service import ShareService
 from repositories.share_repository import ShareRepository
-from dtos.share_dto import ShareDTO
+import json
 
 
 def get_shares():
-    shares = ShareRepository.get_all_shares()
-    return jsonify(
-        [
-            {
-                "id": share.id,
-                "ticker": share.ticker,
-                "start": share.start,
-                "end": share.end,
-                "prediction": share.prediction,
-            }
-            for share in shares
-        ]
-    )
+    shares = ShareService.get_all_shares()
+    response_data = []
+
+    for share in shares:
+        response_data.append(
+            OrderedDict(
+                [
+                    ("ticker", share.ticker),
+                    ("start", share.start),
+                    ("end", share.end),
+                    ("id", share.id),
+                    ("prediction", share.prediction),
+                ]
+            )
+        )
+
+    return Response(json.dumps(response_data), mimetype="application/json")
 
 
 def get_share(id):
-    share = ShareRepository.get_share_by_id(id)
+    share = ShareService.get_share_by_id(id)
     if share:
-        return jsonify(
-            {
-                "id": share.id,
-                "ticker": share.ticker,
-                "start": share.start,
-                "end": share.end,
-                "prediction": share.prediction,
-            }
+        response_data = OrderedDict(
+            [
+                ("ticker", share.ticker),
+                ("start", share.start),
+                ("end", share.end),
+                ("id", share.id),
+                ("prediction", share.prediction),
+            ]
         )
-    return jsonify({"error": "Share not found"}), 404
+        return Response(json.dumps(response_data), mimetype="application/json")
+    return (
+        Response(json.dumps({"error": "Share not found"}), mimetype="application/json"),
+        404,
+    )
 
 
 def create_share():
-    try:
-        share_dto = ShareDTO.from_request_data(request.json)
-        new_share = ShareService.create_share(
-            share_dto.ticker, share_dto.start, share_dto.end, share_dto.days
-        )
-        return (
-            jsonify(
-                {
-                    "id": new_share.id,
-                    "ticker": new_share.ticker,
-                    "start": new_share.start,
-                    "end": new_share.end,
-                    "prediction": new_share.prediction,
-                }
-            ),
-            201,
-        )
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+    data = request.json
+    ticker = data.get("ticker")
+    start = data.get("start")
+    end = data.get("end")
+    days = data.get("days", 30)
+
+    new_share = ShareService.create_share(ticker, start, end, days)
+
+    response_data = OrderedDict(
+        [
+            ("ticker", new_share.ticker),
+            ("start", new_share.start),
+            ("end", new_share.end),
+            ("id", new_share.id),
+            ("prediction", new_share.prediction),
+        ]
+    )
+
+    return Response(json.dumps(response_data), mimetype="application/json"), 201
 
 
 def update_share(id):
-    try:
-        share_dto = ShareDTO.from_request_data(request.json)
-        updated_share = ShareService.update_share(
-            id, share_dto.ticker, share_dto.start, share_dto.end, share_dto.days
+    data = request.json
+    ticker = data.get("ticker")
+    start = data.get("start")
+    end = data.get("end")
+    days = data.get("days", 30)
+
+    updated_share = ShareService.update_share(id, ticker, start, end, days)
+    if updated_share:
+        response_data = OrderedDict(
+            [
+                ("ticker", updated_share.ticker),
+                ("start", updated_share.start),
+                ("end", updated_share.end),
+                ("id", updated_share.id),
+                ("prediction", updated_share.prediction),
+            ]
         )
-        if updated_share:
-            return jsonify(
-                {
-                    "id": updated_share.id,
-                    "ticker": updated_share.ticker,
-                    "start": updated_share.start,
-                    "end": updated_share.end,
-                    "prediction": updated_share.prediction,
-                }
-            )
-        return jsonify({"error": "Share not found"}), 404
-    except ValueError as e:
-        return jsonify({"error": str(e)}), 400
+        return Response(json.dumps(response_data), mimetype="application/json")
+    return (
+        Response(json.dumps({"error": "Share not found"}), mimetype="application/json"),
+        404,
+    )
 
 
 def delete_share(id):
-    success = ShareRepository.delete_share(id)
+    success = ShareService.delete_share(id)
     if success:
-        return jsonify({"message": "Share deleted"})
-    return jsonify({"error": "Share not found"}), 404
+        return Response(
+            json.dumps({"message": "Share deleted"}), mimetype="application/json"
+        )
+    return (
+        Response(json.dumps({"error": "Share not found"}), mimetype="application/json"),
+        404,
+    )
