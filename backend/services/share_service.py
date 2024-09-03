@@ -7,12 +7,15 @@ from tensorflow.keras.callbacks import EarlyStopping
 from repositories.share_repository import ShareRepository
 from models.share import Share
 
+
 class ShareService:
     @staticmethod
     def preprocess_data(df):
         # Verificar se o DataFrame não está vazio
         if df.empty:
-            raise ValueError("No data available for the specified date range and ticker.")
+            raise ValueError(
+                "No data available for the specified date range and ticker."
+            )
 
         # Redefinir o índice para garantir que a data seja uma coluna
         df.reset_index(inplace=True)
@@ -25,14 +28,12 @@ class ShareService:
         df.index = df.index.tz_convert(None)
         df = df.sort_index()
 
-        # Selecionar as colunas de interesse
         features = df[["Open", "High", "Low", "Close", "Adj Close", "Volume"]].values
 
         # Normalizar os dados
         scaler_features = MinMaxScaler(feature_range=(0, 1))
         scaled_features = scaler_features.fit_transform(features)
 
-        # Criar um scaler separado apenas para a coluna 'Close'
         scaler_close = MinMaxScaler(feature_range=(0, 1))
         scaled_close = scaler_close.fit_transform(df[["Close"]].values)
 
@@ -43,7 +44,7 @@ class ShareService:
         X, y = [], []
         for i in range(sequence_length, len(data) - future_steps + 1):
             X.append(data[i - sequence_length : i])
-            y.append(data[i : i + future_steps, 3])  # Usando a coluna 'Close' como target
+            y.append(data[i : i + future_steps, 3])
         return np.array(X), np.array(y)
 
     @staticmethod
@@ -59,8 +60,17 @@ class ShareService:
         model.add(Dense(units=future_steps))
         model.compile(optimizer="adam", loss="mean_squared_error")
 
-        early_stopping = EarlyStopping(monitor="val_loss", patience=5, restore_best_weights=True)
-        model.fit(X_train, y_train, epochs=20, batch_size=32, validation_split=0.2, callbacks=[early_stopping])
+        early_stopping = EarlyStopping(
+            monitor="val_loss", patience=5, restore_best_weights=True
+        )
+        model.fit(
+            X_train,
+            y_train,
+            epochs=20,
+            batch_size=32,
+            validation_split=0.2,
+            callbacks=[early_stopping],
+        )
         return model
 
     @staticmethod
@@ -70,11 +80,13 @@ class ShareService:
 
         # Preprocessar os dados
         scaled_features, scaler_close = ShareService.preprocess_data(df)
-        sequence_length = 60  # Definindo a janela de sequências
-        future_steps = days   # Definindo o número de dias de previsão
+        sequence_length = 60
+        future_steps = days
 
         # Criar sequências para o treinamento
-        X, y = ShareService.create_sequences_multi_step(scaled_features, sequence_length, future_steps)
+        X, y = ShareService.create_sequences_multi_step(
+            scaled_features, sequence_length, future_steps
+        )
 
         # Dividir em conjuntos de treino e teste
         train_size = int(len(X) * 0.8)
@@ -82,17 +94,29 @@ class ShareService:
         y_train, y_test = y[:train_size], y[train_size:]
 
         # Treinar o modelo LSTM
-        model = ShareService.train_model(X_train, y_train, sequence_length, X.shape[2], future_steps)
+        model = ShareService.train_model(
+            X_train, y_train, sequence_length, X.shape[2], future_steps
+        )
 
         # Prever os próximos 'days' dias usando os últimos 'sequence_length' dias de dados
         last_sequence = scaled_features[-sequence_length:]
-        last_sequence = last_sequence.reshape((1, sequence_length, scaled_features.shape[1]))
+        last_sequence = last_sequence.reshape(
+            (1, sequence_length, scaled_features.shape[1])
+        )
         future_predictions = model.predict(last_sequence)
 
         # Inverter a normalização das previsões
         predictions = scaler_close.inverse_transform(future_predictions).flatten()
 
         return predictions.tolist()
+
+    @staticmethod
+    def get_all_shares():
+        return ShareRepository.get_all_shares()
+
+    @staticmethod
+    def get_share_by_id(share_id):
+        return ShareRepository.get_share_by_id(share_id)
 
     @staticmethod
     def create_share(ticker, start, end, days):
@@ -102,6 +126,17 @@ class ShareService:
 
     @staticmethod
     def update_share(share_id, ticker, start, end, days):
-        predictions = ShareService.make_prediction(ticker, start, end, days)
-        updated_share = Share(ticker, start, end, predictions)
-        return ShareRepository.update_share(share_id, updated_share)
+        # Adicione lógica para buscar, atualizar e salvar a ação
+        share = ShareRepository.get_share_by_id(share_id)
+        if share:
+            predictions = ShareService.make_prediction(ticker, start, end, days)
+            share.ticker = ticker
+            share.start = start
+            share.end = end
+            share.prediction = predictions
+            return ShareRepository.save_share(share)
+        return None
+
+    @staticmethod
+    def delete_share(share_id):
+        return ShareRepository.delete_share(share_id)

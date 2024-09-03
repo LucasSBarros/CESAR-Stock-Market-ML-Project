@@ -2,6 +2,7 @@ import yfinance as yf
 from models.share import Share
 from db import db
 
+
 class ShareRepository:
     @staticmethod
     def get_all_shares():
