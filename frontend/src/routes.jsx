@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import ScheduleFormPage from "./pages/ShareFormPage.jsx";
+import ScheduleFormPage from "./pages/shareFormPage.jsx";
 
 const AppRoutes = () => (
   <BrowserRouter>

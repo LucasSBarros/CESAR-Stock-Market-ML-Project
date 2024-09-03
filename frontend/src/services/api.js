@@ -1,13 +1,12 @@
-import env from "../utils/env";
 
 async function fetcher(url, options) {
   try {
-    const response = await fetch(`${env.VITE_BACKEND_URL}${url}`, options);
+    const response = await fetch(`http://127.0.0.1:5000${url}`, options);
 
     if (options?.method === "DELETE" && response.ok) {
       return {};
     }
-
+  
     const data = await response.json();
 
     if (response.ok) {
