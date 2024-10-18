@@ -49,7 +49,7 @@ def create_share():
     ticker = data.get("ticker")
     start = data.get("start")
     end = data.get("end")
-    days = data.get("days", 30)
+    days = data.get("days")
 
     new_share = ShareService.create_share(ticker, start, end, days)
 
@@ -71,7 +71,7 @@ def update_share(id):
     ticker = data.get("ticker")
     start = data.get("start")
     end = data.get("end")
-    days = data.get("days", 30)
+    days = data.get("days")
 
     updated_share = ShareService.update_share(id, ticker, start, end, days)
     if updated_share:

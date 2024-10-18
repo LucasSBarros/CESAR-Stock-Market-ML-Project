@@ -15,8 +15,9 @@ import {
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import fetcher from "../services/api";
+import { useNavigate } from "react-router-dom";
 
-const ScheduleForm = () => {
+const ShareFormPage = () => {
   const {
     register,
     handleSubmit,
@@ -25,17 +26,22 @@ const ScheduleForm = () => {
     reset,
   } = useForm({
     defaultValues: {
-      share: "VALE",
-      startDate: "2021-01-01",
-      endDate: "2024-09-02",
-      days: 60,
+      share: "",
+      startDate: "2022-01-01",
+      endDate:
+        new Date().getFullYear() +
+        "-" +
+        String(new Date().getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(new Date().getDate()).padStart(2, "0"),
+      days: null,
     },
   });
-  const [prediction, setPrediction] = React.useState(null);
+
+  const navigate = useNavigate();
 
   const onSubmit = async (data) => {
     console.log("Enviando dados:", data);
-    setPrediction(null);
     try {
       const response = await fetcher.post("/api/shares", {
         ticker: data.share,
@@ -45,7 +51,9 @@ const ScheduleForm = () => {
       });
 
       console.log("Resposta recebida:", response);
-      setPrediction(response.data);
+
+      navigate("/prediction-results");
+
       reset();
     } catch (err) {
       console.error("Erro ao fazer requisição:", err);
@@ -61,24 +69,24 @@ const ScheduleForm = () => {
       minH={"100vh"}
       align={"center"}
       justify={"center"}
-      bg={useColorModeValue("black")}
+      bg={useColorModeValue("gray.100", "gray.900")}
     >
       <Stack spacing={8} mx={"auto"} maxW={"lg"} py={12} px={6}>
         <Box
           rounded={"lg"}
-          bg={useColorModeValue("gray.700")}
-          boxShadow={"xl"}
+          bg={useColorModeValue("white", "gray.700")}
+          boxShadow={"2xl"}
           p={8}
         >
           <Stack spacing={4} as="form" onSubmit={handleSubmit(onSubmit)}>
             <Heading
               fontSize={"xxx-large"}
               textAlign={"center"}
-              color={"green.400"}
+              color={"green.600"}
             >
               Stock Market Predictions
             </Heading>
-            <Text fontSize={"xl"} color={"white"}>
+            <Text fontSize={"xl"} color={"black"}>
               Input the name of the share that you want to predict.
             </Text>
 
@@ -86,7 +94,7 @@ const ScheduleForm = () => {
               id="share"
               isRequired
               isInvalid={errors.share}
-              color={"white"}
+              color={"black"}
             >
               <FormLabel>Share</FormLabel>
               <Input
@@ -102,7 +110,7 @@ const ScheduleForm = () => {
               id="days"
               isRequired
               isInvalid={errors.days}
-              color={"white"}
+              color={"black"}
             >
               <FormLabel>Number of days</FormLabel>
               <Input
@@ -123,9 +131,9 @@ const ScheduleForm = () => {
                   isRequired
                   isInvalid={errors.startDate}
                   width={"196px"}
-                  color={"white"}
+                  color={"black"}
                 >
-                  <FormLabel>Inicial Date</FormLabel>
+                  <FormLabel>Start Date</FormLabel>
                   <Input
                     type="date"
                     {...register("startDate", {
@@ -143,9 +151,9 @@ const ScheduleForm = () => {
                   isRequired
                   isInvalid={errors.endDate}
                   width={"196px"}
-                  color={"white"}
+                  color={"black"}
                 >
-                  <FormLabel>Final Date</FormLabel>
+                  <FormLabel>End Date</FormLabel>
                   <Input
                     type="date"
                     {...register("endDate", {
@@ -165,10 +173,10 @@ const ScheduleForm = () => {
                 isLoading={isSubmitting}
                 loadingText="Submitting"
                 size="lg"
-                bg={"green.400"}
+                bg={"green.600"}
                 color={"white"}
                 _hover={{
-                  bg: "green.500",
+                  bg: "green.700",
                 }}
               >
                 Predict
@@ -177,11 +185,9 @@ const ScheduleForm = () => {
             {errors.apiError && (
               <Text color="red.500">{errors.apiError.message}</Text>
             )}
-            <Stack pt={6}>
-              <Text align={"center"} color={"white"}>
-                Do you want to see other predictions already made?
-                <br />
-                <Link color={"green.400"}>Other predictions.</Link>
+            <Stack pt={2}>
+              <Text align={"center"} color={"black"}>
+                Farinha Limers Ltd. ©
               </Text>
             </Stack>
           </Stack>
@@ -191,4 +197,4 @@ const ScheduleForm = () => {
   );
 };
 
-export default ScheduleForm;
+export default ShareFormPage;

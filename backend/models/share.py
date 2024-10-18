@@ -1,4 +1,4 @@
-from db import db  # Importar db do módulo separado
+from db import db
 
 
 class Share(db.Model):

@@ -7,11 +7,9 @@ app = Flask(__name__)
 
 CORS(app)
 
-# Configuração de aplicação
 app.config.from_object(Config)
 db.init_app(app)
 
-# Importar controladores
 from controllers.share_controller import (
     get_shares,
     get_share,
@@ -20,23 +18,25 @@ from controllers.share_controller import (
     delete_share,
 )
 
-# Adicionar regras de URL para as rotas
 app.add_url_rule("/api/shares", "get_shares", get_shares, methods=["GET"])
 app.add_url_rule("/api/shares/<int:id>", "get_share", get_share, methods=["GET"])
 app.add_url_rule("/api/shares", "create_share", create_share, methods=["POST"])
 app.add_url_rule("/api/shares/<int:id>", "update_share", update_share, methods=["PUT"])
-app.add_url_rule("/api/shares/<int:id>", "delete_share", delete_share, methods=["DELETE"])
+app.add_url_rule(
+    "/api/shares/<int:id>", "delete_share", delete_share, methods=["DELETE"]
+)
 
-# Log dos cabeçalhos da requisição e resposta para depuração
+
 @app.before_request
 def log_request_info():
-    print('Request Headers:', request.headers)
-    print('Request Body:', request.get_data())
+    print("Request Headers:", request.headers)
+    print("Request Body:", request.get_data())
 
     @after_this_request
     def add_headers(response):
         print("Response headers:", response.headers)
         return response
+
 
 if __name__ == "__main__":
     app.run(debug=True)

@@ -4,7 +4,6 @@ import AppRoutes from "./routes.jsx";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <ChakraProvider>
-      <AppRoutes />
+    <AppRoutes />
   </ChakraProvider>
 );
-
