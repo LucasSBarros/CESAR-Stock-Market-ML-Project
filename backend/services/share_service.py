@@ -1,14 +1,16 @@
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import MinMaxScaler
-from sklearn.neighbors import KNeighborsRegressor
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense, Dropout, Input
+from tensorflow.keras.callbacks import EarlyStopping
 from repositories.share_repository import ShareRepository
 from models.share import Share
 
 
 class ShareService:
     @staticmethod
-    def preprocess_data(df, n_lags):
+    def preprocess_data(df):
         if df.empty:
             raise ValueError(
                 "No data available for the specified date range and ticker."
@@ -25,72 +27,91 @@ class ShareService:
 
         df.dropna(inplace=True)
 
-        for i in range(1, n_lags + 1):
-            df[f"lag_{i}"] = df["Adj Close"].shift(i)
+        # Seleciona múltiplas features
+        features = df[["Open", "High", "Low", "Close", "Adj Close", "Volume"]].values
 
-        df.dropna(inplace=True)
+        # Normaliza as features
+        scaler_features = MinMaxScaler(feature_range=(0, 1))
+        scaled_features = scaler_features.fit_transform(features)
 
-        X = df[[f"lag_{i}" for i in range(1, n_lags + 1)]]
-        y = df["Adj Close"]
+        # Normaliza separadamente a coluna 'Close' para inversão posterior
+        scaler_close = MinMaxScaler(feature_range=(0, 1))
+        scaled_close = scaler_close.fit_transform(df[["Close"]].values)
 
-        scaler_X = MinMaxScaler()
-        X_scaled = scaler_X.fit_transform(X)
-
-        scaler_y = MinMaxScaler()
-        y_scaled = scaler_y.fit_transform(y.values.reshape(-1, 1))
-
-        X_scaled = pd.DataFrame(X_scaled, index=X.index, columns=X.columns)
-
-        return X_scaled, y_scaled, scaler_X, scaler_y
+        return scaled_features, scaler_close
 
     @staticmethod
-    def train_model(X_train, y_train):
-        knn = KNeighborsRegressor(n_neighbors=3)
-        knn.fit(X_train, y_train.ravel())
-        return knn
+    def create_sequences_multi_step(data, sequence_length, future_steps):
+        X, y = [], []
+        for i in range(sequence_length, len(data) - future_steps + 1):
+            X.append(data[i - sequence_length : i])
+            y.append(
+                data[i : i + future_steps, 3]
+            )  # Índice 3 corresponde à coluna 'Close'
+        return np.array(X), np.array(y)
+
+    @staticmethod
+    def train_model(X_train, y_train, sequence_length, feature_count, future_steps):
+        model = Sequential()
+        model.add(Input(shape=(sequence_length, feature_count)))
+        model.add(LSTM(units=100, return_sequences=True))
+        model.add(Dropout(0.3))
+        model.add(LSTM(units=100, return_sequences=True))
+        model.add(Dropout(0.3))
+        model.add(LSTM(units=50, return_sequences=False))
+        model.add(Dropout(0.2))
+        model.add(Dense(units=future_steps))
+        model.compile(optimizer="adam", loss="mean_squared_error")
+
+        early_stopping = EarlyStopping(
+            monitor="val_loss", patience=5, restore_best_weights=True
+        )
+        model.fit(
+            X_train,
+            y_train,
+            epochs=20,
+            batch_size=32,
+            validation_split=0.2,
+            callbacks=[early_stopping],
+        )
+        return model
 
     @staticmethod
     def make_prediction(ticker, start, end, days):
-        try:
-            n_lags = int(days)
-            if n_lags <= 0:
-                raise ValueError("n_lags must be a positive integer.")
-        except ValueError as e:
-            print(f"Invalid value for n_lags: {e}")
-            return None
-
+        # Obter dados históricos
         df = ShareRepository.get_historical_data(ticker, start, end)
 
-        X_scaled, y_scaled, scaler_X, scaler_y = ShareService.preprocess_data(df, n_lags)
+        # Preprocessar os dados
+        scaled_features, scaler_close = ShareService.preprocess_data(df)
+        sequence_length = 60
+        future_steps = int(days)
 
-        model = ShareService.train_model(X_scaled, y_scaled)
-
-        lag_columns = [f"lag_{i}" for i in range(1, n_lags + 1)]
-        last_known_values = df["Adj Close"][-n_lags:].values.reshape(1, -1)
-        last_known_values_df = pd.DataFrame(last_known_values, columns=lag_columns)
-
-        last_known_values_scaled = scaler_X.transform(last_known_values_df)
-
-        last_known_values_scaled_df = pd.DataFrame(
-            last_known_values_scaled, columns=lag_columns
+        # Criar sequências para o treinamento
+        X, y = ShareService.create_sequences_multi_step(
+            scaled_features, sequence_length, future_steps
         )
 
-        future_predictions = []
+        # Dividir em conjuntos de treino e teste
+        train_size = int(len(X) * 0.8)
+        X_train, X_test = X[:train_size], X[train_size:]
+        y_train, y_test = y[:train_size], y[train_size:]
 
-        for _ in range(n_lags):
-            y_pred_scaled = model.predict(last_known_values_scaled_df)
-            y_pred = scaler_y.inverse_transform(y_pred_scaled.reshape(-1, 1)).flatten()[0]
-            future_predictions.append(y_pred)
+        # Treinar o modelo LSTM
+        model = ShareService.train_model(
+            X_train, y_train, sequence_length, X.shape[2], future_steps
+        )
 
-            new_input_scaled = np.append(
-                last_known_values_scaled_df.values.flatten()[1:], y_pred_scaled
-            )
+        # Prever os próximos 'days' dias usando os últimos 'sequence_length' dias de dados
+        last_sequence = scaled_features[-sequence_length:]
+        last_sequence = last_sequence.reshape(
+            (1, sequence_length, scaled_features.shape[1])
+        )
+        future_predictions = model.predict(last_sequence)
 
-            last_known_values_scaled_df = pd.DataFrame(
-                [new_input_scaled], columns=lag_columns
-            )
+        # Inverter a normalização das previsões
+        predictions = scaler_close.inverse_transform(future_predictions).flatten()
 
-        return future_predictions
+        return predictions.tolist()
 
     @staticmethod
     def get_all_shares():
