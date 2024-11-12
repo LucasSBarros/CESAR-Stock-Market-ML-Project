@@ -27,14 +27,11 @@ class ShareService:
 
         df.dropna(inplace=True)
 
-        # Seleciona múltiplas features
         features = df[["Open", "High", "Low", "Close", "Adj Close", "Volume"]].values
 
-        # Normaliza as features
         scaler_features = MinMaxScaler(feature_range=(0, 1))
         scaled_features = scaler_features.fit_transform(features)
 
-        # Normaliza separadamente a coluna 'Close' para inversão posterior
         scaler_close = MinMaxScaler(feature_range=(0, 1))
         scaled_close = scaler_close.fit_transform(df[["Close"]].values)
 
@@ -45,9 +42,7 @@ class ShareService:
         X, y = [], []
         for i in range(sequence_length, len(data) - future_steps + 1):
             X.append(data[i - sequence_length : i])
-            y.append(
-                data[i : i + future_steps, 3]
-            )  # Índice 3 corresponde à coluna 'Close'
+            y.append(data[i : i + future_steps, 3])
         return np.array(X), np.array(y)
 
     @staticmethod
@@ -78,37 +73,31 @@ class ShareService:
 
     @staticmethod
     def make_prediction(ticker, start, end, days):
-        # Obter dados históricos
+
         df = ShareRepository.get_historical_data(ticker, start, end)
 
-        # Preprocessar os dados
         scaled_features, scaler_close = ShareService.preprocess_data(df)
         sequence_length = 60
         future_steps = int(days)
 
-        # Criar sequências para o treinamento
         X, y = ShareService.create_sequences_multi_step(
             scaled_features, sequence_length, future_steps
         )
 
-        # Dividir em conjuntos de treino e teste
         train_size = int(len(X) * 0.8)
         X_train, X_test = X[:train_size], X[train_size:]
         y_train, y_test = y[:train_size], y[train_size:]
 
-        # Treinar o modelo LSTM
         model = ShareService.train_model(
             X_train, y_train, sequence_length, X.shape[2], future_steps
         )
 
-        # Prever os próximos 'days' dias usando os últimos 'sequence_length' dias de dados
         last_sequence = scaled_features[-sequence_length:]
         last_sequence = last_sequence.reshape(
             (1, sequence_length, scaled_features.shape[1])
         )
         future_predictions = model.predict(last_sequence)
 
-        # Inverter a normalização das previsões
         predictions = scaler_close.inverse_transform(future_predictions).flatten()
 
         return predictions.tolist()
