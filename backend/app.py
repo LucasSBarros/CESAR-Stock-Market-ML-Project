@@ -10,8 +10,6 @@ from db import db
 from models.share import Share
 
 
-
-
 app = Flask(__name__)
 
 CORS(app)
