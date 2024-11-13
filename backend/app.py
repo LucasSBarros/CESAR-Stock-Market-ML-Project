@@ -1,8 +1,16 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from flask import Flask, request, jsonify, after_this_request
 from flask_cors import CORS
 from config import Config
 from db import db
 from models.share import Share
+
+
+
 
 app = Flask(__name__)
 
