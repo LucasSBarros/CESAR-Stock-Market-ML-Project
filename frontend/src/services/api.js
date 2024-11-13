@@ -1,6 +1,6 @@
 async function fetcher(url, options) {
   try {
-    const response = await fetch(`http://127.0.0.1:8000${url}`, options);
+    const response = await fetch(`http://44.210.88.150${url}`, options);
 
     if (options?.method === "DELETE" && response.ok) {
       return {};
