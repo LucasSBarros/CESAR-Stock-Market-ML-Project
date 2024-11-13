@@ -154,7 +154,7 @@ const PredictionPage = () => {
           direction={{ base: "column", md: "row" }}
           justify="space-between"
           alignItems="center"
-          width="100%" // Garante que o Flex ocupe o espaço disponível no Box
+          width="100%" 
         >
           <Box width="600px" height="400px" display="flex" alignItems="center">
             <Line data={chartData} />
