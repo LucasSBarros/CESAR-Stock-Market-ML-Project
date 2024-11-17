@@ -1,6 +1,6 @@
 async function fetcher(url, options) {
   try {
-    const response = await fetch(`http://backend-fl.jeremiasoliveira.com${url}`, options);
+    const response = await fetch(`https://backend-fl.jeremiasoliveira.com${url}`, options);
 
     if (options?.method === "DELETE" && response.ok) {
       return {};
