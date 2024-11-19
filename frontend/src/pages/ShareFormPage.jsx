@@ -130,12 +130,16 @@ const ShareFormPage = () => {
               color={"black"}
             >
               <FormLabel>Number of days</FormLabel>
-              <Input
-                type="number"
+              <Select
+                placeholder="Select number of days"
                 {...register("days", {
                   required: "Number of days is required",
                 })}
-              />
+              >
+                <option value="60">60</option>
+                <option value="90">90</option>
+                <option value="120">120</option>
+              </Select>
               {errors.days && (
                 <Text color="red.500">{errors.days.message}</Text>
               )}
