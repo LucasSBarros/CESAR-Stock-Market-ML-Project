@@ -12,6 +12,7 @@ import {
   Text,
   useColorModeValue,
   Link,
+  Select,
 } from "@chakra-ui/react";
 import { useForm } from "react-hook-form";
 import fetcher from "../services/api";
@@ -97,10 +98,26 @@ const ShareFormPage = () => {
               color={"black"}
             >
               <FormLabel>Share</FormLabel>
-              <Input
-                type="text"
+              <Select
+                placeholder="Select a share"
                 {...register("share", { required: "Share is required" })}
-              />
+              >
+                <option value="ELET3.SA">ELET3.SA</option>
+                <option value="ELET6.SA">ELET6.SA</option>
+                <option value="ELPL3.SA">ELPL3.SA</option>
+                <option value="NEOE3.SA">NEOE3.SA</option>
+                <option value="CPFE3.SA">CPFE3.SA</option>
+                <option value="EQTL3.SA">EQTL3.SA</option>
+                <option value="CMIG3.SA">CMIG3.SA</option>
+                <option value="CMIG4.SA">CMIG4.SA</option>
+                <option value="PETR3.SA">PETR3.SA</option>
+                <option value="PETR4.SA">PETR4.SA</option>
+                <option value="CGAS5.SA">CGAS5.SA</option>
+                <option value="RAIZ4.SA">RAIZ4.SA</option>
+                <option value="CSAN3.SA">CSAN3.SA</option>
+                <option value="SMTO3.SA">SMTO3.SA</option>
+                <option value="AGRO3.SA">AGRO3.SA</option>
+              </Select>
               {errors.share && (
                 <Text color="red.500">{errors.share.message}</Text>
               )}
